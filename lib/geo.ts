@@ -1,6 +1,6 @@
-// サンワテック 会社座標（仮）
-export const COMPANY_LAT = 35.05;
-export const COMPANY_LNG = 137.01;
+// サンワテック 会社座標（愛知県豊明市中ノ坪20-10）
+export const COMPANY_LAT = 35.0537;
+export const COMPANY_LNG = 137.0079;
 export const ALLOWED_RADIUS_METERS = 100;
 
 export function calcDistanceMeters(
