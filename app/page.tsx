@@ -1,17 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
-const STAFF_NAMES = ["田中 太郎", "佐藤 花子", "鈴木 一郎", "山田 次郎", "伊藤 三郎"];
+type StaffItem = { id: string; name: string };
 
 export default function LoginPage() {
   const router = useRouter();
+  const [staffList, setStaffList] = useState<StaffItem[]>([]);
   const [selectedName, setSelectedName] = useState<string | null>(null);
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingStaff, setLoadingStaff] = useState(true);
+
+  useEffect(() => {
+    async function loadStaff() {
+      const { data } = await supabase
+        .from("staff")
+        .select("id, name")
+        .eq("is_admin", false)
+        .order("name");
+      setStaffList(data ?? []);
+      setLoadingStaff(false);
+    }
+    loadStaff();
+  }, []);
 
   function appendPin(digit: string) {
     if (pin.length < 4) setPin((p) => p + digit);
@@ -23,14 +38,8 @@ export default function LoginPage() {
   }
 
   async function handleLogin() {
-    if (!selectedName) {
-      setError("名前を選んでください");
-      return;
-    }
-    if (pin.length !== 4) {
-      setError("4桁のPINを入力してください");
-      return;
-    }
+    if (!selectedName) { setError("名前を選んでください"); return; }
+    if (pin.length !== 4) { setError("4桁のPINを入力してください"); return; }
     setLoading(true);
     setError("");
 
@@ -75,27 +84,32 @@ export default function LoginPage() {
         <p className="text-gray-600 text-lg font-bold mb-3 text-center">
           あなたの名前を選んでください
         </p>
-        <div className="flex flex-col gap-3 mb-6">
-          {STAFF_NAMES.map((name) => (
-            <button
-              key={name}
-              onClick={() => {
-                setSelectedName(name);
-                setPin("");
-                setError("");
-              }}
-              className={`py-4 rounded-2xl text-xl font-bold border-2 transition-all ${
-                selectedName === name
-                  ? "bg-blue-600 text-white border-blue-600 shadow-lg scale-105"
-                  : "bg-white text-gray-800 border-gray-300 hover:border-blue-400"
-              }`}
-            >
-              {name}
-            </button>
-          ))}
-        </div>
 
-        {/* PIN表示 */}
+        {loadingStaff ? (
+          <div className="text-center py-6 text-gray-400 font-bold">読み込み中...</div>
+        ) : (
+          <div className="flex flex-col gap-3 mb-6">
+            {staffList.map((staff) => (
+              <button
+                key={staff.id}
+                onClick={() => {
+                  setSelectedName(staff.name);
+                  setPin("");
+                  setError("");
+                }}
+                className={`py-4 rounded-2xl text-xl font-bold border-2 transition-all ${
+                  selectedName === staff.name
+                    ? "bg-blue-600 text-white border-blue-600 shadow-lg scale-105"
+                    : "bg-white text-gray-800 border-gray-300 hover:border-blue-400"
+                }`}
+              >
+                {staff.name}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* PIN入力 */}
         {selectedName && (
           <>
             <p className="text-gray-600 text-lg font-bold mb-3 text-center">
@@ -118,27 +132,25 @@ export default function LoginPage() {
 
             {/* テンキー */}
             <div className="grid grid-cols-3 gap-3 mb-4">
-              {["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "⌫"].map(
-                (key, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => {
-                      if (key === "⌫") setPin((p) => p.slice(0, -1));
-                      else if (key !== "") appendPin(key);
-                    }}
-                    disabled={key === ""}
-                    className={`h-16 rounded-2xl text-2xl font-bold transition-all ${
-                      key === ""
-                        ? "invisible"
-                        : key === "⌫"
-                        ? "bg-red-100 text-red-600 hover:bg-red-200 active:scale-95"
-                        : "bg-gray-100 text-gray-800 hover:bg-blue-100 active:scale-95 active:bg-blue-200"
-                    }`}
-                  >
-                    {key}
-                  </button>
-                )
-              )}
+              {["1","2","3","4","5","6","7","8","9","","0","⌫"].map((key, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => {
+                    if (key === "⌫") setPin((p) => p.slice(0, -1));
+                    else if (key !== "") appendPin(key);
+                  }}
+                  disabled={key === ""}
+                  className={`h-16 rounded-2xl text-2xl font-bold transition-all ${
+                    key === ""
+                      ? "invisible"
+                      : key === "⌫"
+                      ? "bg-red-100 text-red-600 hover:bg-red-200 active:scale-95"
+                      : "bg-gray-100 text-gray-800 hover:bg-blue-100 active:scale-95 active:bg-blue-200"
+                  }`}
+                >
+                  {key}
+                </button>
+              ))}
             </div>
 
             {error && (

@@ -40,7 +40,8 @@ export default function AdminPage() {
       .lte("work_date", end)
       .order("work_date", { ascending: false });
 
-    const rows: LogRow[] = (data ?? []).map((row: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rows: LogRow[] = ((data ?? []) as any[]).map((row) => {
       let work_minutes: number | null = null;
       let overtime_minutes: number | null = null;
       if (row.clock_in && row.clock_out) {
